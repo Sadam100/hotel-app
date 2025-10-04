@@ -216,6 +216,15 @@ function App() {
         />
       </main>
 
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-6 mt-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-gray-600 text-sm">
+            © {new Date().getFullYear()} Copyright by <span className="font-semibold text-gray-800">Sadam Hussain</span>. All rights reserved.
+          </p>
+        </div>
+      </footer>
+
       {/* Form Modal */}
       {isFormOpen && (
         <HotelForm
