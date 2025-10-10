@@ -32,7 +32,7 @@ export const getAllHotels = async (params?: {
     if (params?.maxPrice) queryParams.append('maxPrice', params.maxPrice.toString());
     if (params?.minRating) queryParams.append('minRating', params.minRating.toString());
 
-    const response = await fetch(`${API_BASE_URL}/hotels?${queryParams}`);
+    const response = await fetch(`${API_BASE_URL}/api/hotels?${queryParams}`);
     const data = await response.json();
     
     if (!response.ok) {
@@ -49,7 +49,7 @@ export const getAllHotels = async (params?: {
 // GET /api/hotels/:id - Get single hotel by ID
 export const getHotelById = async (id: string): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hotels/${id}`);
+    const response = await fetch(`${API_BASE_URL}/api/hotels/${id}`);
     const data = await response.json();
     
     if (!response.ok) {
@@ -66,7 +66,7 @@ export const getHotelById = async (id: string): Promise<ApiResponse<any>> => {
 // POST /api/hotels - Create new hotel
 export const createHotel = async (hotelData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hotels`, {
+    const response = await fetch(`${API_BASE_URL}/api/hotels`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,7 +90,7 @@ export const createHotel = async (hotelData: any): Promise<ApiResponse<any>> => 
 // PUT /api/hotels/:id - Update hotel by ID
 export const updateHotel = async (id: string, hotelData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hotels/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/hotels/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export const updateHotel = async (id: string, hotelData: any): Promise<ApiRespon
 // DELETE /api/hotels/:id - Delete hotel by ID
 export const deleteHotel = async (id: string): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hotels/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/hotels/${id}`, {
       method: 'DELETE',
     });
     
@@ -134,7 +134,7 @@ export const deleteHotel = async (id: string): Promise<ApiResponse<any>> => {
 // GET /api/hotels/stats - Get hotel statistics
 export const getHotelStats = async (): Promise<ApiResponse<HotelStats>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hotels/stats`);
+    const response = await fetch(`${API_BASE_URL}/api/hotels/stats`);
     const data = await response.json();
     
     if (!response.ok) {
