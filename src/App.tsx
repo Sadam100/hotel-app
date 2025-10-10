@@ -1,15 +1,23 @@
-import { useState, useEffect } from 'react';
-import type { Hotel } from './types/Hotel';
-import HotelList from './components/HotelList';
-import HotelForm from './components/HotelForm';
-import { getAllHotels, createHotel, updateHotel, deleteHotel, getHotelStats } from './services/api';
+import { useState, useEffect } from "react";
+import type { Hotel } from "./types/Hotel";
+import HotelList from "./components/HotelList";
+import HotelForm from "./components/HotelForm";
+import {
+  getAllHotels,
+  createHotel,
+  updateHotel,
+  deleteHotel,
+  getHotelStats,
+} from "./services/api";
 
 function App() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingHotel, setEditingHotel] = useState<Hotel | undefined>(undefined);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRoomType, setFilterRoomType] = useState<string>('All');
+  const [editingHotel, setEditingHotel] = useState<Hotel | undefined>(
+    undefined
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRoomType, setFilterRoomType] = useState<string>("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
@@ -30,15 +38,15 @@ function App() {
       setError(null);
       const response = await getAllHotels({
         search: searchTerm || undefined,
-        roomType: filterRoomType !== 'All' ? filterRoomType : undefined,
+        roomType: filterRoomType !== "All" ? filterRoomType : undefined,
       });
-      
+
       if (response.success && response.data) {
         setHotels(response.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load hotels');
-      console.error('Error loading hotels:', err);
+      setError(err instanceof Error ? err.message : "Failed to load hotels");
+      console.error("Error loading hotels:", err);
     } finally {
       setLoading(false);
     }
@@ -55,32 +63,32 @@ function App() {
         });
       }
     } catch (err) {
-      console.error('Error loading stats:', err);
+      console.error("Error loading stats:", err);
     }
   };
 
-  const handleAddHotel = async (hotelData: Omit<Hotel, 'id'>) => {
+  const handleAddHotel = async (hotelData: Omit<Hotel, "id">) => {
     try {
       setError(null);
       const response = await createHotel(hotelData);
-      
+
       if (response.success && response.data) {
         setHotels([...hotels, response.data]);
         setIsFormOpen(false);
         loadStats(); // Refresh stats
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create hotel');
-      console.error('Error creating hotel:', err);
+      setError(err instanceof Error ? err.message : "Failed to create hotel");
+      console.error("Error creating hotel:", err);
     }
   };
 
-  const handleUpdateHotel = async (hotelData: Omit<Hotel, 'id'>) => {
+  const handleUpdateHotel = async (hotelData: Omit<Hotel, "id">) => {
     if (editingHotel) {
       try {
         setError(null);
         const response = await updateHotel(editingHotel.id, hotelData);
-        
+
         if (response.success && response.data) {
           setHotels(
             hotels.map((hotel) =>
@@ -92,8 +100,8 @@ function App() {
           loadStats(); // Refresh stats
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update hotel');
-        console.error('Error updating hotel:', err);
+        setError(err instanceof Error ? err.message : "Failed to update hotel");
+        console.error("Error updating hotel:", err);
       }
     }
   };
@@ -102,14 +110,14 @@ function App() {
     try {
       setError(null);
       const response = await deleteHotel(id);
-      
+
       if (response.success) {
         setHotels(hotels.filter((hotel) => hotel.id !== id));
         loadStats(); // Refresh stats
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete hotel');
-      console.error('Error deleting hotel:', err);
+      setError(err instanceof Error ? err.message : "Failed to delete hotel");
+      console.error("Error deleting hotel:", err);
     }
   };
 
@@ -155,7 +163,9 @@ function App() {
                 <span className="text-4xl lg:text-5xl mr-3">🏨</span>
                 Hotel Management System
               </h1>
-              <p className="text-gray-600 mt-2 text-sm md:text-base">Manage your hotel bookings efficiently</p>
+              <p className="text-gray-600 mt-2 text-sm md:text-base">
+                Manage your hotel bookings efficiently
+              </p>
             </div>
             <button
               onClick={() => setIsFormOpen(true)}
@@ -185,8 +195,12 @@ function App() {
           <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-8 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">Total Hotels</p>
-                <p className="text-4xl font-bold text-blue-600">{stats.totalHotels}</p>
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">
+                  Total Hotels
+                </p>
+                <p className="text-4xl font-bold text-blue-600">
+                  {stats.totalHotels}
+                </p>
               </div>
               <div className="text-5xl opacity-80">🏨</div>
             </div>
@@ -194,8 +208,12 @@ function App() {
           <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-8 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">Available Rooms</p>
-                <p className="text-4xl font-bold text-green-600">{stats.totalAvailableRooms}</p>
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">
+                  Available Rooms
+                </p>
+                <p className="text-4xl font-bold text-green-600">
+                  {stats.totalAvailableRooms}
+                </p>
               </div>
               <div className="text-5xl opacity-80">🛏️</div>
             </div>
@@ -203,8 +221,12 @@ function App() {
           <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-8 border border-gray-100 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">Average Rating</p>
-                <p className="text-4xl font-bold text-yellow-600">{stats.averageRating.toFixed(1)}</p>
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">
+                  Average Rating
+                </p>
+                <p className="text-4xl font-bold text-yellow-600">
+                  {stats.averageRating.toFixed(1)}
+                </p>
               </div>
               <div className="text-5xl opacity-80">⭐</div>
             </div>
@@ -213,7 +235,9 @@ function App() {
 
         {/* Filters Section */}
         <div className="bg-white rounded-xl shadow-md p-8 mb-10 border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-6">🔍 Search & Filter</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-6">
+            🔍 Search & Filter
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -245,15 +269,19 @@ function App() {
               </select>
             </div>
           </div>
-          {(searchTerm || filterRoomType !== 'All') && (
+          {(searchTerm || filterRoomType !== "All") && (
             <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-200">
               <p className="text-sm font-medium text-gray-700">
-                Found <span className="text-blue-600 font-bold">{filteredHotels.length}</span> hotel(s)
+                Found{" "}
+                <span className="text-blue-600 font-bold">
+                  {filteredHotels.length}
+                </span>{" "}
+                hotel(s)
               </p>
               <button
                 onClick={() => {
-                  setSearchTerm('');
-                  setFilterRoomType('All');
+                  setSearchTerm("");
+                  setFilterRoomType("All");
                 }}
                 className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
               >
@@ -282,7 +310,9 @@ function App() {
       <footer className="bg-white border-t border-gray-200 py-6 mt-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-gray-600 text-sm">
-            © {new Date().getFullYear()} Copyright by <span className="font-semibold text-gray-800">Sadam Hussain</span>. All rights reserved.
+            © {new Date().getFullYear()} Copyright by{" "}
+            <span className="font-semibold text-gray-800">Sadam Hussain</span>.
+            All rights reserved.
           </p>
         </div>
       </footer>
