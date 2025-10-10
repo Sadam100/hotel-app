@@ -1,76 +1,116 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Hotel } from './types/Hotel';
 import HotelList from './components/HotelList';
 import HotelForm from './components/HotelForm';
+import { getAllHotels, createHotel, updateHotel, deleteHotel, getHotelStats } from './services/api';
 
 function App() {
-  const [hotels, setHotels] = useState<Hotel[]>([
-    {
-      id: '1',
-      name: 'Grand Plaza Hotel',
-      location: 'New York, NY',
-      roomType: 'Deluxe',
-      pricePerNight: 250.00,
-      availableRooms: 15,
-      rating: 4.5,
-      checkInDate: '2025-10-15',
-      isPetFriendly: true,
-      amenities: ['WiFi', 'Pool', 'Gym', 'Restaurant'],
-    },
-    {
-      id: '2',
-      name: 'Sunset Beach Resort',
-      location: 'Miami, FL',
-      roomType: 'Suite',
-      pricePerNight: 350.00,
-      availableRooms: 8,
-      rating: 4.8,
-      checkInDate: '2025-10-20',
-      isPetFriendly: false,
-      amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Room Service'],
-    },
-    {
-      id: '3',
-      name: 'Mountain View Lodge',
-      location: 'Denver, CO',
-      roomType: 'Double',
-      pricePerNight: 180.00,
-      availableRooms: 25,
-      rating: 4.2,
-      checkInDate: '2025-11-01',
-      isPetFriendly: true,
-      amenities: ['WiFi', 'Parking', 'Gym'],
-    },
-  ]);
-
+  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingHotel, setEditingHotel] = useState<Hotel | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRoomType, setFilterRoomType] = useState<string>('All');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalHotels: 0,
+    totalAvailableRooms: 0,
+    averageRating: 0,
+  });
 
-  const handleAddHotel = (hotelData: Omit<Hotel, 'id'>) => {
-    const newHotel: Hotel = {
-      ...hotelData,
-      id: Date.now().toString(),
-    };
-    setHotels([...hotels, newHotel]);
-    setIsFormOpen(false);
-  };
+  // Load hotels and stats on component mount
+  useEffect(() => {
+    loadHotels();
+    loadStats();
+  }, []);
 
-  const handleUpdateHotel = (hotelData: Omit<Hotel, 'id'>) => {
-    if (editingHotel) {
-      setHotels(
-        hotels.map((hotel) =>
-          hotel.id === editingHotel.id ? { ...hotelData, id: hotel.id } : hotel
-        )
-      );
-      setEditingHotel(undefined);
-      setIsFormOpen(false);
+  const loadHotels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getAllHotels({
+        search: searchTerm || undefined,
+        roomType: filterRoomType !== 'All' ? filterRoomType : undefined,
+      });
+      
+      if (response.success && response.data) {
+        setHotels(response.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load hotels');
+      console.error('Error loading hotels:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteHotel = (id: string) => {
-    setHotels(hotels.filter((hotel) => hotel.id !== id));
+  const loadStats = async () => {
+    try {
+      const response = await getHotelStats();
+      if (response.success && response.data) {
+        setStats({
+          totalHotels: response.data.totalHotels,
+          totalAvailableRooms: response.data.totalAvailableRooms,
+          averageRating: response.data.averageRating,
+        });
+      }
+    } catch (err) {
+      console.error('Error loading stats:', err);
+    }
+  };
+
+  const handleAddHotel = async (hotelData: Omit<Hotel, 'id'>) => {
+    try {
+      setError(null);
+      const response = await createHotel(hotelData);
+      
+      if (response.success && response.data) {
+        setHotels([...hotels, response.data]);
+        setIsFormOpen(false);
+        loadStats(); // Refresh stats
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create hotel');
+      console.error('Error creating hotel:', err);
+    }
+  };
+
+  const handleUpdateHotel = async (hotelData: Omit<Hotel, 'id'>) => {
+    if (editingHotel) {
+      try {
+        setError(null);
+        const response = await updateHotel(editingHotel.id, hotelData);
+        
+        if (response.success && response.data) {
+          setHotels(
+            hotels.map((hotel) =>
+              hotel.id === editingHotel.id ? response.data : hotel
+            )
+          );
+          setEditingHotel(undefined);
+          setIsFormOpen(false);
+          loadStats(); // Refresh stats
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update hotel');
+        console.error('Error updating hotel:', err);
+      }
+    }
+  };
+
+  const handleDeleteHotel = async (id: string) => {
+    try {
+      setError(null);
+      const response = await deleteHotel(id);
+      
+      if (response.success) {
+        setHotels(hotels.filter((hotel) => hotel.id !== id));
+        loadStats(); // Refresh stats
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete hotel');
+      console.error('Error deleting hotel:', err);
+    }
   };
 
   const handleEditClick = (hotel: Hotel) => {
@@ -83,15 +123,26 @@ function App() {
     setEditingHotel(undefined);
   };
 
-  // Filter hotels based on search term and room type
-  const filteredHotels = hotels.filter((hotel) => {
-    const matchesSearch =
-      hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      hotel.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRoomType =
-      filterRoomType === 'All' || hotel.roomType === filterRoomType;
-    return matchesSearch && matchesRoomType;
-  });
+  // Handle search and filter changes
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+  };
+
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadHotels();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterRoomType]);
+
+  const handleFilterChange = (newFilterRoomType: string) => {
+    setFilterRoomType(newFilterRoomType);
+  };
+
+  // Use hotels directly since filtering is now done on the backend
+  const filteredHotels = hotels;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -119,13 +170,23 @@ function App() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="text-red-500 mr-3">⚠️</div>
+              <p className="text-red-700 font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Stats Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-10">
           <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-8 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">Total Hotels</p>
-                <p className="text-4xl font-bold text-blue-600">{hotels.length}</p>
+                <p className="text-4xl font-bold text-blue-600">{stats.totalHotels}</p>
               </div>
               <div className="text-5xl opacity-80">🏨</div>
             </div>
@@ -134,9 +195,7 @@ function App() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">Available Rooms</p>
-                <p className="text-4xl font-bold text-green-600">
-                  {hotels.reduce((sum, hotel) => sum + hotel.availableRooms, 0)}
-                </p>
+                <p className="text-4xl font-bold text-green-600">{stats.totalAvailableRooms}</p>
               </div>
               <div className="text-5xl opacity-80">🛏️</div>
             </div>
@@ -145,11 +204,7 @@ function App() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm font-medium uppercase tracking-wide mb-3">Average Rating</p>
-                <p className="text-4xl font-bold text-yellow-600">
-                  {hotels.length > 0
-                    ? (hotels.reduce((sum, hotel) => sum + hotel.rating, 0) / hotels.length).toFixed(1)
-                    : '0.0'}
-                </p>
+                <p className="text-4xl font-bold text-yellow-600">{stats.averageRating.toFixed(1)}</p>
               </div>
               <div className="text-5xl opacity-80">⭐</div>
             </div>
@@ -168,7 +223,7 @@ function App() {
                 type="text"
                 placeholder="Search by name or location..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all"
               />
             </div>
@@ -178,7 +233,7 @@ function App() {
               </label>
               <select
                 value={filterRoomType}
-                onChange={(e) => setFilterRoomType(e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all"
               >
                 <option value="All">All Room Types</option>
@@ -209,11 +264,18 @@ function App() {
         </div>
 
         {/* Hotels List */}
-        <HotelList
-          hotels={filteredHotels}
-          onEdit={handleEditClick}
-          onDelete={handleDeleteHotel}
-        />
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">Loading hotels...</span>
+          </div>
+        ) : (
+          <HotelList
+            hotels={filteredHotels}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteHotel}
+          />
+        )}
       </main>
 
       {/* Footer */}
